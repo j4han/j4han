@@ -1,91 +1,147 @@
 document.addEventListener("DOMContentLoaded", () => {
   // 1. Dynamic Footer Year
-  const yearSpan = document.getElementById("year");
-  if (yearSpan) {
-    yearSpan.textContent = new Date().getFullYear();
+  const yearEl = document.getElementById("year");
+  if (yearEl) {
+    yearEl.textContent = new Date().getFullYear();
   }
 
-  // 2. Dark / Light Theme Toggle
-  const themeBtn = document.getElementById("theme-toggle");
+  // 2. Dark / Light Theme Toggle with LocalStorage
+  const themeToggleBtn = document.getElementById("theme-toggle");
   const rootEl = document.documentElement;
+  const savedTheme = localStorage.getItem("portfolio-theme") || "dark";
 
-  themeBtn.addEventListener("click", () => {
+  rootEl.setAttribute("data-theme", savedTheme);
+  themeToggleBtn.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+  themeToggleBtn.addEventListener("click", () => {
     const currentTheme = rootEl.getAttribute("data-theme");
     const nextTheme = currentTheme === "dark" ? "light" : "dark";
     rootEl.setAttribute("data-theme", nextTheme);
-    themeBtn.textContent = nextTheme === "dark" ? "☀️ Light" : "🌙 Dark";
+    localStorage.setItem("portfolio-theme", nextTheme);
+    themeToggleBtn.textContent = nextTheme === "dark" ? "☀️" : "🌙";
   });
 
-  // 3. Dynamic Role Subtitle Cycling
+  // 3. Mobile Navigation Menu Toggle
+  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+  const navLinks = document.getElementById("nav-links");
+
+  mobileMenuBtn.addEventListener("click", () => {
+    navLinks.classList.toggle("open");
+  });
+
+  document.querySelectorAll(".nav-link").forEach((link) => {
+    link.addEventListener("click", () => navLinks.classList.remove("open"));
+  });
+
+  // 4. Hero Role Typewriter Effect
   const roles = [
-    "M.Voc Software Application Development Candidate",
-    "Kotlin & Python Backend Developer",
-    "UI/UX & Figma Enthusiast",
-    "MySQL Database Architect"
+    "Software Developer",
+    "M.Voc Candidate @ CUSAT",
+    "Kotlin & Python Backend Dev",
+    "UI/UX & Frontend Engineer"
   ];
   const typewriterEl = document.getElementById("typewriter");
   let roleIndex = 0;
+  let charIndex = 0;
+  let isDeleting = false;
 
-  setInterval(() => {
-    roleIndex = (roleIndex + 1) % roles.length;
-    typewriterEl.style.opacity = "0";
-    setTimeout(() => {
-      typewriterEl.textContent = roles[roleIndex];
-      typewriterEl.style.opacity = "1";
-    }, 200);
-  }, 3200);
+  function runTypewriter() {
+    const currentRole = roles[roleIndex];
 
-  // 4. Interactive Skill Category Filtering
+    if (isDeleting) {
+      typewriterEl.textContent = currentRole.substring(0, charIndex - 1);
+      charIndex--;
+    } else {
+      typewriterEl.textContent = currentRole.substring(0, charIndex + 1);
+      charIndex++;
+    }
+
+    let typingSpeed = isDeleting ? 45 : 85;
+
+    if (!isDeleting && charIndex === currentRole.length) {
+      typingSpeed = 1800; // Pause at full word
+      isDeleting = true;
+    } else if (isDeleting && charIndex === 0) {
+      isDeleting = false;
+      roleIndex = (roleIndex + 1) % roles.length;
+      typingSpeed = 400; // Pause before next word
+    }
+
+    setTimeout(runTypewriter, typingSpeed);
+  }
+
+  runTypewriter();
+
+  // 5. Interactive Project Filtering
   const filterBtns = document.querySelectorAll(".filter-btn");
-  const skillCards = document.querySelectorAll(".skill-card");
+  const projectCards = document.querySelectorAll(".project-card");
 
   filterBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       filterBtns.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
-      const category = btn.getAttribute("data-category");
+      const selectedFilter = btn.getAttribute("data-filter");
 
-      skillCards.forEach((card) => {
-        if (category === "all" || card.getAttribute("data-category") === category) {
-          card.classList.remove("hidden");
+      projectCards.forEach((card) => {
+        const cardCategory = card.getAttribute("data-category");
+        if (selectedFilter === "all" || cardCategory === selectedFilter) {
+          card.style.display = "flex";
         } else {
-          card.classList.add("hidden");
+          card.style.display = "none";
         }
       });
     });
   });
 
-  // 5. Client-Side Contact Form Validation
+  // 6. Client-Side Contact Form Validation
   const contactForm = document.getElementById("contact-form");
-  const feedbackEl = document.getElementById("form-feedback");
+  const nameInput = document.getElementById("name");
+  const emailInput = document.getElementById("email");
+  const messageInput = document.getElementById("message");
+  const nameError = document.getElementById("name-error");
+  const emailError = document.getElementById("email-error");
+  const messageError = document.getElementById("message-error");
+  const formStatus = document.getElementById("form-status");
 
-  contactForm.addEventListener("submit", (event) => {
-    event.preventDefault();
+  contactForm.addEventListener("submit", (e) => {
+    e.preventDefault();
 
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const message = document.getElementById("message").value.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    let isValid = true;
+    nameError.textContent = "";
+    emailError.textContent = "";
+    messageError.textContent = "";
+    formStatus.textContent = "";
 
-    if (!name || !email || !message) {
-      feedbackEl.style.color = "#f87171";
-      feedbackEl.textContent = "Please fill in all fields before sending.";
-      return;
+    const nameVal = nameInput.value.trim();
+    const emailVal = emailInput.value.trim();
+    const messageVal = messageInput.value.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (nameVal.length < 2) {
+      nameError.textContent = "Please enter your name.";
+      isValid = false;
     }
 
-    if (!emailRegex.test(email)) {
-      feedbackEl.style.color = "#f87171";
-      feedbackEl.textContent = "Please enter a valid email address.";
-      return;
+    if (!emailPattern.test(emailVal)) {
+      emailError.textContent = "Please enter a valid email address.";
+      isValid = false;
     }
 
-    // Open pre-filled mailto client or confirm validation
-    feedbackEl.style.color = "#4ade80";
-    feedbackEl.textContent = `Thanks, ${name}! Opening your email client...`;
-    const subject = encodeURIComponent(`Portfolio Inquiry from ${name}`);
-    const body = encodeURIComponent(`${message}\n\nFrom: ${name} (${email})`);
-    window.location.href = `mailto:xyz.dev@email.com?subject=${subject}&body=${body}`;
-    contactForm.reset();
+    if (messageVal.length < 10) {
+      messageError.textContent = "Message should be at least 10 characters.";
+      isValid = false;
+    }
+
+    if (isValid) {
+      formStatus.style.color = "#34d399";
+      formStatus.textContent = `Thanks, ${nameVal}! Opening your mail client...`;
+
+      const subject = encodeURIComponent(`Portfolio Contact from ${nameVal}`);
+      const body = encodeURIComponent(`${messageVal}\n\nFrom: ${nameVal} (${emailVal})`);
+      window.location.href = `mailto:xyz.dev@email.com?subject=${subject}&body=${body}`;
+
+      contactForm.reset();
+    }
   });
 });
